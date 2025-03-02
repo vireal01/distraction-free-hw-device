@@ -1,7 +1,7 @@
 import network
 import time
 import wifi_config
-
+import ui.display as display
 
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)  # Режим станции (клиента)
@@ -19,14 +19,18 @@ def connect_wifi():
             timeout -= 1
 
         if wlan.isconnected():
+            display.show_wifi_status(wlan)
             print("Connected!")
             print("Network config:", wlan.ifconfig())
         else:
+            display.show_wifi_status(wlan)
             print("Failed to connect")
             wlan.active(False)
     else:
         print("Already connected!")
         print("Network config:", wlan.ifconfig())
 
+display.initialize_display()
+display.show_welcome_screen()
 # Автоматически подключаемся к Wi-Fi при загрузке
 connect_wifi()
