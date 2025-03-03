@@ -4,9 +4,11 @@ class PomodoroState:
         self.is_running = False
         self.start_time = 0
         self.remaining_time = 0
+        self.is_paused = False
 
     def reset(self):
         """Reset pomodoro state to default values"""
         self.is_running = False
         self.start_time = 0
         self.remaining_time = 0
+        self.is_paused = False

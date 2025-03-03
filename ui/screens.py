@@ -1,7 +1,7 @@
-from machine import Pin
-import modules.sh1106 as sh1106
-import time
+import random
 import config
+from state.app_state import app_state
+import ui.display as display 
 
 class Screen:
     SELECT_MODE = "SelectMode"
@@ -20,27 +20,34 @@ def show_select_mode(oled, menu_items, current_selection):
             oled.text("   " + item, 0, 10 + i * 10)
     oled.show()
 
-def show_pomodoro(oled):
+def show_pomodoro(oled, force_update=False):
+    """
+    Display the pomodoro screen
+    force_update: Force screen update even if content hasn't changed
+    """
     oled.fill(0)
     oled.text("Pomodoro", 0, 0)
     
-    if not config.pomodoro_state.is_running:
-        oled.text(f"Set: {config.pomodoro_state.time} min", 0, 20)
+    if not app_state.pomodoro.is_running:
+        oled.text(f"Set: {app_state.pomodoro.time} min", 0, 20)
         oled.text("Press OK to start", 0, 40)
     else:
-        remaining = config.pomodoro_state.remaining_time
+        remaining = app_state.pomodoro.remaining_time
         minutes = remaining // 60
         seconds = remaining % 60
-        oled.text(f"Time: {minutes:02d}:{seconds:02d}", 0, 20)
-        oled.text("Press OK to stop", 0, 40)
+        oled.text(f"{minutes:02d}:{seconds:02d}", 40, 20)
+        if app_state.pomodoro.is_paused:
+            oled.text("Paused", 0, 35)
+        else:
+            oled.text("Press = pause", 0, 35)
+        oled.text("Hold = resert", 0, 50)
     
-    oled.show()
+    # Only show if forced or content changed
+    if force_update:
+        oled.show()
 
-def show_time(oled):
-    oled.fill(0)
-    oled.text("Time", 0, 0)
-    oled.text("Current time: 12:00", 0, 10)
-    oled.show()
+def show_time():
+    display.show_screen_saver(random.choice(range(1, 7)))
 
 def show_wifi_settings(oled):
     oled.fill(0)

@@ -28,6 +28,17 @@ def show_welcome_screen():
     draw_bitmap_from_file('/assets/hello.pbm', 0, 0)
     oled.show()
 
+def show_happy_screen(index):
+    oled.fill(0)
+    print(f'/assets/happy{index%2}.pbm')
+    draw_bitmap_from_file(f'/assets/happy{index%2}.pbm', 0, 0)
+    oled.show()
+
+def show_screen_saver(index):
+    oled.fill(0)
+    draw_bitmap_from_file(f'/assets/screen{index}.pbm', 0, 0)
+    oled.show()
+
 # Function to draw a bitmap from a file
 def draw_bitmap_from_file(file_name, x, y):
     image = load_image(file_name)

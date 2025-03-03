@@ -12,6 +12,7 @@ rm -rf $BOARD_PATH/inputs
 rm -rf $BOARD_PATH/ui
 rm -rf $BOARD_PATH/assets
 rm -rf $BOARD_PATH/models
+rm -rf $BOARD_PATH/state
 rm -rf $BOARD_PATH/*.py
 EOF
 
@@ -22,6 +23,7 @@ cp -r $PROJECT_ROOT/inputs $BOARD_PATH/
 cp -r $PROJECT_ROOT/ui $BOARD_PATH/
 cp -r $PROJECT_ROOT/assets $BOARD_PATH/
 cp -r $PROJECT_ROOT/models $BOARD_PATH/
+cp -r $PROJECT_ROOT/state $BOARD_PATH/
 cp $PROJECT_ROOT/*.py $BOARD_PATH/
 EOF
 

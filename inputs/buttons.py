@@ -3,10 +3,11 @@ import time
 import config
 from ui.screens import Screen
 from inputs.handlers.main_menu import handle_select_mode
-from inputs.handlers.pomodoro import handle_pomodoro
+from inputs.handlers.pomodoro import handle_pomodoro, handle_pomodoro_long_press
+from state import app_state
 # Track button press times
-press_start = {19: 0, 18: 0, 5: 0}  # For tracking long press start time
-last_press = {19: 0, 18: 0, 5: 0}
+press_start = {config.left_button: 0, config.middle_button: 0, config.right_button: 0}  # For tracking long press start time
+last_press = {config.left_button: 0, config.middle_button: 0, config.right_button: 0}
 
 def button_callback(pinId, button, oled, menu_items, current_selection, current_screen):
     current_time = time.ticks_ms()
@@ -23,17 +24,17 @@ def button_callback(pinId, button, oled, menu_items, current_selection, current_
             
             if press_duration >= config.long_press_threshold:  # Long Press (≥ 1000ms)
                 # Switch to SELECT_MODE if long press on left button
-                if current_screen != Screen.SELECT_MODE and pinId == 19:
+                if current_screen != Screen.SELECT_MODE and pinId == config.left_button:
                     current_screen = Screen.SELECT_MODE
                 # Reset Pomodoro state if long press on middle button
-                elif current_screen == Screen.POMODORO and pinId == 18:
-                    config.pomodoro_state.reset()
+                elif current_screen == Screen.POMODORO and pinId == config.middle_button:
+                    handle_pomodoro_long_press(app_state.pomodoro)
 
             else:
                 if current_screen == Screen.SELECT_MODE:
                     current_screen, current_selection = handle_select_mode(pinId, menu_items, current_selection)
                 elif current_screen == Screen.POMODORO:
-                    handle_pomodoro(pinId, config.pomodoro_state)
+                    handle_pomodoro(pinId, app_state.pomodoro)
 
 
         last_press[pinId] = current_time  # Update last press timestamp

@@ -16,6 +16,7 @@ def connect_wifi():
         while not wlan.isconnected() and timeout > 0:
             print("Waiting for connection...")
             time.sleep(1)
+            display.show_happy_screen(timeout)
             timeout -= 1
 
         if wlan.isconnected():

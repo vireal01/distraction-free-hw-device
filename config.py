@@ -1,5 +1,9 @@
-from models.pomodoro import PomodoroState
+# Hardware configuration
+left_button = 19
+middle_button = 18
+right_button = 5
 
-long_press_threshold = 1000  # Long press threshold in milliseconds (e.g., 1000 ms = 1 second)
+# Timing configurations
+long_press_threshold = 1000  # milliseconds
+screen_update_interval = 1000  # milliseconds
 default_pomodoro_time = 25  # minutes
-pomodoro_state = PomodoroState(default_pomodoro_time)
