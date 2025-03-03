@@ -1,83 +1,92 @@
-from machine import Pin, I2C, Timer
-import sh1106
+# main.py
+
 import time
+from machine import Pin
+from ui.screens import Screen
+import config
+from services.service_container import ServiceContainer
 
-# I2C Settigs
-i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=400000)
-print("I2C devices found:", i2c.scan())
+# Initialize services
+services = ServiceContainer()
+services.initialize()
 
-# Display
-oled_width = 128
-oled_height = 64
-oled = sh1106.SH1106_I2C(oled_width, oled_height, i2c, addr=0x3C)
-
-# Buttons
+# Button setup
 buttons = {
-    19: Pin(19, Pin.IN, Pin.PULL_UP),
-    18: Pin(18, Pin.IN, Pin.PULL_UP),
-    5: Pin(5, Pin.IN, Pin.PULL_UP),
+    config.left_button: Pin(config.left_button, Pin.IN, Pin.PULL_UP),
+    config.middle_button: Pin(config.middle_button, Pin.IN, Pin.PULL_UP),
+    config.right_button: Pin(config.right_button, Pin.IN, Pin.PULL_UP),
 }
 
-# Screens
-class Screen:
-    SELECT_MODE = "SelectMode"
-    POMODORO = "Pomodoro"
-    TIME = "Time"
-
-
-last_press = {pin: 0 for pin in buttons.keys()}
-
-menu_items = ["Item 1", "Item 2", "Item 3"]
+# Menu settings
+menu_items = [Screen.POMODORO, Screen.TIME]
 current_selection = 0
 
-# Button callbacks logic
-def button_left_callback():
-    global current_selection
-    current_selection = (current_selection - 1) % len(menu_items)
+# Current screen state
+current_screen = Screen.SELECT_MODE
 
-def button_right_callback():
-    global current_selection
-    current_selection = (current_selection + 1) % len(menu_items)
+last_irq_time = 0
+DEBOUNCE_MS = 100
 
-def button_middle_callback():
-    print(f"Selected: {menu_items[current_selection]}")
-    oled.fill(0)
-    oled.text(f"Selected: {menu_items[current_selection]}", 0, 0)
-    oled.show()
-    time.sleep(1)
+# Button callback IRQ handler
+def button_irq_handler(pin, button):
+    global current_screen, current_selection, last_irq_time
+    
+    current_time = time.ticks_ms()
+    if time.ticks_diff(current_time, last_irq_time) < DEBOUNCE_MS:
+        return  # Ignore interrupt if within debounce period
+    
+    last_irq_time = current_time
+    
+    current_screen, current_selection = services.input_service.handle_button(
+        pin_id=pin,
+        button_value=button.value(),
+        current_screen=current_screen,
+        current_selection=current_selection
+    )
 
-def button_callback(pinId, button):
-    if time.ticks_diff(time.ticks_ms(), last_press[pinId]) > 200:
+    # # Update screen immediately if screen changed
+    # if new_screen != current_screen:
+    #     current_screen = new_screen
+    #     current_selection = new_selection
+        
+        # Show initial screen state
+    if current_screen == Screen.SELECT_MODE:
+        services.display.show_menu(menu_items, current_selection)
+    elif current_screen == Screen.POMODORO:
+        services.display.show_pomodoro(force_update=True)
+    elif current_screen == Screen.TIME:
+        services.display.show_time()
+    # else:
+    #     current_screen = new_screen
+    #     current_selection = new_selection
 
-        last_press[pinId] = time.ticks_ms()
-        oled.fill(0) 
-        if pinId == 19:
-            button_left_callback()
-        elif pinId == 18:
-            button_middle_callback()
-        elif pinId == 5:
-            button_right_callback()
-        else:
-            print("Unknown button pressed")
-
-        oled.show()
-
-# Подключение прерываний
+# Set up interrupts for buttons
 for pin, button in buttons.items():
-    button.irq(trigger=Pin.IRQ_FALLING, handler=lambda btn=button, p=pin: button_callback(p, btn))
+    button.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=lambda btn=button, p=pin: button_irq_handler(p, btn))
 
-# Основной цикл меню
-def show_menu():
-    oled.fill(0)  # Очистить экран
-    oled.text("Menu", 0, 0)
-    for i, item in enumerate(menu_items):
-        if i == current_selection:
-            oled.text("-> " + item, 0, 10 + i * 10)  # Выделить выбранный пункт
-        else:
-            oled.text("   " + item, 0, 10 + i * 10)  # Остальные пункты
-    oled.show()
+# Pomodoro timer state
+last_update = time.ticks_ms()
 
-# Основной цикл
+# Main loop
 while True:
-    show_menu()
+    current_time = time.ticks_ms()
+    time_diff = time.ticks_diff(current_time, last_update)
+    
+    if current_screen == Screen.SELECT_MODE:
+        services.display.show_menu(menu_items, current_selection)
+    elif current_screen == Screen.POMODORO:
+        # Update timer if running
+        if services.pomodoro.is_running:
+            if time_diff >= config.screen_update_interval:
+                # Update remaining time if not paused
+                services.display.show_pomodoro(force_update=True)
+                services.pomodoro.update_timer()
+                last_update = current_time
+        # else:
+        #     services.display.show_pomodoro()
+    elif current_screen == Screen.TIME:
+        if time_diff >= config.screen_update_interval:
+            services.display.show_time()
+            last_update = current_time
+
     time.sleep(0.1)
