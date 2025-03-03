@@ -2,14 +2,13 @@
 
 import time
 from machine import Pin
-from inputs.buttons import button_callback
-from ui.screens import show_select_mode, show_pomodoro, show_time, Screen
-from ui.display import initialize_display
+from ui.screens import Screen
 import config
-from state import app_state
+from services.service_container import ServiceContainer
 
-# Initialize display
-oled = initialize_display()
+# Initialize services
+services = ServiceContainer()
+services.initialize()
 
 # Button setup
 buttons = {
@@ -25,10 +24,41 @@ current_selection = 0
 # Current screen state
 current_screen = Screen.SELECT_MODE
 
+last_irq_time = 0
+DEBOUNCE_MS = 100
+
 # Button callback IRQ handler
 def button_irq_handler(pin, button):
-    global current_screen, current_selection
-    current_screen, current_selection = button_callback(pin, button, oled, menu_items, current_selection, current_screen)
+    global current_screen, current_selection, last_irq_time
+    
+    current_time = time.ticks_ms()
+    if time.ticks_diff(current_time, last_irq_time) < DEBOUNCE_MS:
+        return  # Ignore interrupt if within debounce period
+    
+    last_irq_time = current_time
+    
+    current_screen, current_selection = services.input_service.handle_button(
+        pin_id=pin,
+        button_value=button.value(),
+        current_screen=current_screen,
+        current_selection=current_selection
+    )
+
+    # # Update screen immediately if screen changed
+    # if new_screen != current_screen:
+    #     current_screen = new_screen
+    #     current_selection = new_selection
+        
+        # Show initial screen state
+    if current_screen == Screen.SELECT_MODE:
+        services.display.show_menu(menu_items, current_selection)
+    elif current_screen == Screen.POMODORO:
+        services.display.show_pomodoro(force_update=True)
+    elif current_screen == Screen.TIME:
+        services.display.show_time()
+    # else:
+    #     current_screen = new_screen
+    #     current_selection = new_selection
 
 # Set up interrupts for buttons
 for pin, button in buttons.items():
@@ -43,27 +73,20 @@ while True:
     time_diff = time.ticks_diff(current_time, last_update)
     
     if current_screen == Screen.SELECT_MODE:
-        show_select_mode(oled, menu_items, current_selection)
+        services.display.show_menu(menu_items, current_selection)
     elif current_screen == Screen.POMODORO:
         # Update timer if running
-        if app_state.pomodoro.is_running:
+        if services.pomodoro.is_running:
             if time_diff >= config.screen_update_interval:
-                elapsed = int(time.time() - app_state.pomodoro.start_time)
                 # Update remaining time if not paused
-                if not app_state.pomodoro.is_paused:
-                    app_state.pomodoro.remaining_time = max(0, app_state.pomodoro.time * 60 - elapsed)
-                
-                # Reset if timer has expired
-                if app_state.pomodoro.remaining_time == 0:
-                    app_state.pomodoro.is_running = False
-                
-                show_pomodoro(oled, force_update=True)
+                services.display.show_pomodoro(force_update=True)
+                services.pomodoro.update_timer()
                 last_update = current_time
-        else:
-            show_pomodoro(oled)
+        # else:
+        #     services.display.show_pomodoro()
     elif current_screen == Screen.TIME:
         if time_diff >= config.screen_update_interval:
-            show_time()
+            services.display.show_time()
             last_update = current_time
 
     time.sleep(0.1)
