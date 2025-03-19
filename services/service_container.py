@@ -3,12 +3,14 @@ from services.notification_service import NotificationService
 from services.pomodoro_service import PomodoroService
 from services.display_service import DisplayService
 from services.input_service import InputService
+from services.encoder_service import EncoderService
 from services.interfaces import (
     SettingsServiceInterface,
     NotificationServiceInterface,
     PomodoroServiceInterface,
     DisplayServiceInterface,
-    InputServiceInterface
+    InputServiceInterface,
+    EncoderServiceInterface
 )
 from hardware.hardware_interfaces import DisplayInterface
 from hardware.oled_sh1106 import OLED_SH1106
@@ -24,6 +26,7 @@ class ServiceContainer:
         self.pomodoro: PomodoroServiceInterface = None
         self.display: DisplayServiceInterface = None
         self.input_service: InputServiceInterface = None
+        self.encoder_service: EncoderServiceInterface = None
 
     def initialize(self):
         # Initialize hardware
@@ -48,6 +51,11 @@ class ServiceContainer:
         )
         
         self.input_service = InputService(
+            pomodoro_service=self.pomodoro,
+            settings_service=self.settings
+        )
+        
+        self.encoder_service = EncoderService(
             pomodoro_service=self.pomodoro,
             settings_service=self.settings
         )

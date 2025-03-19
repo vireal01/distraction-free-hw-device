@@ -1,5 +1,6 @@
 from .interfaces import SettingsServiceInterface
 
+# Rewrite to data class like 
 class SettingsService(SettingsServiceInterface):
     def __init__(self):
         self._settings = {

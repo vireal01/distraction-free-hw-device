@@ -2,5 +2,5 @@
 class Screen:
     SELECT_MODE = "SelectMode"
     POMODORO = "Pomodoro"
-    TIME = "Time"
+    SCREEN_SAVER = "Time"
     SETTINGS = "Settings"
