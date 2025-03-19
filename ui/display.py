@@ -1,12 +1,13 @@
 import modules.sh1106 as sh1106
 from machine import I2C, Pin
 import framebuf
+import config
 
 # I2C Setup for Display
-i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=400000)
+i2c = I2C(0, scl=Pin(config.scl_pin), sda=Pin(config.sda_pin), freq=400000)
 oled_width = 128
 oled_height = 64
-oled = sh1106.SH1106_I2C(oled_width, oled_height, i2c, addr=0x3C)
+oled = sh1106.SH1106_I2C(oled_width, oled_height, i2c, addr=0x3C, rotate=config.screen_rotate_degree)
 
 def initialize_display():
     print("I2C devices found:", i2c.scan())

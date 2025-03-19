@@ -58,9 +58,15 @@ class DisplayServiceInterface:
         pass
 
 
-# TODO: The interface is not complete
 class InputServiceInterface:
     def handle_button(self, pin_id: int, button_value: int, 
                      current_screen: str, current_selection: int = 0):
         """Public method for handling button events"""
         pass
+    def set_state_change_callback(self, callback): pass
+    
+class EncoderServiceInterface: 
+    def handle_rotation(self, pin_id: int, current_screen: str): pass
+    def monitor_encoder_direction(self): pass
+    def set_state_change_callback(self, callback): pass
+    def set_current_screen(self, screen, selection): pass

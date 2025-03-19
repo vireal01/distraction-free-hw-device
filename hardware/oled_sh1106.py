@@ -1,16 +1,17 @@
 import modules.sh1106 as sh1106
 from machine import I2C, Pin
 import framebuf
+import config
 from .hardware_interfaces import DisplayInterface
 
 
 class OLED_SH1106(DisplayInterface): 
     """Adapter for SSD1306 OLED display implementing DisplayInterface"""
 
-    def __init__(self, oled_width=128, oled_height=64, i2c_id=0, sda_pin=21, scl_pin=22):
+    def __init__(self, oled_width=128, oled_height=64, i2c_id=0, sda_pin=config.sda_pin, scl_pin=config.scl_pin):
         """Initialize OLED display with given parameters"""
         i2c = I2C(i2c_id, sda=Pin(sda_pin), scl=Pin(scl_pin), freq=400000)
-        self._display = sh1106.SH1106_I2C(oled_width, oled_height, i2c, addr=0x3C)
+        self._display = sh1106.SH1106_I2C(oled_width, oled_height, i2c, addr=0x3C, rotate=config.screen_rotate_degree)
 
     def fill(self, color: int):
         """Fill display with color (0=black, 1=white)"""
